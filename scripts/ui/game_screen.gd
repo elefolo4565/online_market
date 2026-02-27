@@ -64,7 +64,7 @@ func _process(delta: float) -> void:
 	if _bid_timer_remaining <= 0.0:
 		_bid_timer_remaining = 0.0
 		_bid_timer_active = false
-	_bid_timer_label.text = "⏱ " + str(ceili(_bid_timer_remaining))
+	_bid_timer_label.text = "残り " + str(ceili(_bid_timer_remaining)) + "秒"
 	# 残り10秒以下で赤く点滅
 	if _bid_timer_remaining <= 10.0:
 		var blink: float = absf(sin(_bid_timer_remaining * 4.0))

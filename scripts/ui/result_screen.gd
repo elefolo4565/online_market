@@ -129,9 +129,9 @@ func _create_rank_panel(rank: int, player_name: String, score: int, is_ai: bool)
 	var rank_label: Label = Label.new()
 	var rank_text: String
 	match rank:
-		1: rank_text = "🏆 1st"
-		2: rank_text = "🥈 2nd"
-		3: rank_text = "🥉 3rd"
+		1: rank_text = "1st"
+		2: rank_text = "2nd"
+		3: rank_text = "3rd"
 		_: rank_text = str(rank) + "th"
 	rank_label.text = rank_text
 	rank_label.custom_minimum_size = Vector2(100, 0)

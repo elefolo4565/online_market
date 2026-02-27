@@ -4,6 +4,7 @@ extends Node
 const SCENES: Dictionary = {
 	"title": "res://scenes/ui/title_screen.tscn",
 	"lobby": "res://scenes/ui/lobby_screen.tscn",
+	"online_lobby": "res://scenes/ui/online_lobby_screen.tscn",
 	"game": "res://scenes/ui/game_screen.tscn",
 	"result": "res://scenes/ui/result_screen.tscn",
 }

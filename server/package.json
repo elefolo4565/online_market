@@ -1,0 +1,13 @@
+{
+  "name": "secondary-market-server",
+  "version": "1.0.0",
+  "description": "セカンダリーマーケット オンライン対戦サーバー",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

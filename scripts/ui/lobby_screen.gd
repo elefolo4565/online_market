@@ -10,6 +10,7 @@ const SETTINGS_PATH: String = "user://settings.cfg"
 var _player_count: int = 4
 var _ai_difficulty: int = 1
 var _player_name: String = "あなた"
+var _bg: ColorRect
 var _count_label: Label
 var _difficulty_label: Label
 var _name_edit: LineEdit
@@ -18,14 +19,19 @@ var _name_edit: LineEdit
 func _ready() -> void:
 	_load_settings()
 	_build_ui()
+	GameEvents.bg_color_changed.connect(_on_bg_color_changed)
+
+
+func _on_bg_color_changed(color: Color) -> void:
+	_bg.color = color
 
 
 func _build_ui() -> void:
 	# 背景
-	var bg: ColorRect = ColorRect.new()
-	bg.color = Color(0.12, 0.15, 0.22)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	_bg = ColorRect.new()
+	_bg.color = AudioManager.get_bg_color()
+	_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_bg)
 
 	# スクロール対応のメインコンテナ
 	var scroll: ScrollContainer = ScrollContainer.new()

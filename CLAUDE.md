@@ -6,17 +6,19 @@
 ## 技術スタック
 - Godot Engine 4.6.1
 - GDScript
-- サーバー: Render（将来のオンライン対応）
+- サーバー: Node.js (WebSocket) — Render にデプロイ予定
 
 ## アーキテクチャ
 - **ロジック層** (`scripts/logic/`): GameState, RoundResolver, GameManager — UIに依存しない
 - **UI層** (`scripts/ui/`): GameScreen, CardDisplay等 — シグナルでロジック層と接続
 - **AI** (`scripts/ai/`): 3段階の難易度（RandomStrategy / BasicStrategy / AdvancedStrategy）
 - **Autoload**: GameEvents（イベントバス）, SceneManager（画面遷移）
+- **ネットワーク層** (`scripts/network/`): NetworkClient (WebSocket), NetworkProtocol
+- **サーバー** (`server/`): Node.js WebSocketサーバー — 権威サーバーモデル
 
 ## ディレクトリ構成
 - scenes/ - シーンファイル (.tscn)
-  - ui/ - 各画面シーン (title, lobby, game, result)
+  - ui/ - 各画面シーン (title, lobby, online_lobby, game, result)
   - components/ - 再利用コンポーネント
 - scripts/ - GDScript (.gd)
   - autoload/ - Autoloadスクリプト
@@ -24,7 +26,9 @@
   - logic/ - ゲームロジック (GameState, GameManager, RoundResolver, PlayerState)
   - ai/ - AI (AIPlayer, Strategy各種)
   - ui/ - UI制御スクリプト
-  - network/ - ネットワーク（将来）
+  - network/ - NetworkClient, NetworkProtocol
+- server/ - Node.js WebSocketサーバー
+  - server.js, room_manager.js, game_room.js, round_resolver.js, server_ai.js, protocol.js
 - assets/ - アセットファイル
   - sprites/ - 2Dスプライト
   - fonts/ - フォント (デフォルト: DelaGothicOne-Regular.ttf)
@@ -32,7 +36,16 @@
 - export/ - エクスポート出力
 
 ## 画面遷移
-タイトル → ロビー（人数/AI設定） → ゲーム（15ラウンド） → リザルト → タイトル
+- **オフライン**: タイトル → ロビー → ゲーム → リザルト → タイトル
+- **オンライン**: タイトル → オンラインロビー → ゲーム → リザルト → タイトル
+
+## オンライン対戦
+- **通信**: JSON over WebSocket（権威サーバーモデル）
+- **マッチング**: ルームコード方式 + 自動マッチング
+- **AI補完**: 人数不足時にサーバーサイドAIで補完可能
+- **切断処理**: ゲーム中に切断したプレイヤーはAIに自動置換
+- **サーバー起動**: `cd server && npm install && npm start`（ポート8080）
+- **GameScreenは`_is_online`フラグでオフライン/オンラインを切り替え**
 
 ## ゲームルール
 - 得点カード（銘柄カード）: +1〜+10, -1〜-5 の計15枚

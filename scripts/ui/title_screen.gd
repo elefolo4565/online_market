@@ -26,6 +26,31 @@ func _build_ui() -> void:
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(center)
 
+	# 終了ボタン（右上 — centerより後に追加してクリックを受け取れるようにする）
+	var quit_btn: Button = Button.new()
+	quit_btn.text = "終了"
+	quit_btn.add_theme_font_size_override("font_size", 16)
+	var quit_style: StyleBoxFlat = StyleBoxFlat.new()
+	quit_style.bg_color = Color(0.5, 0.2, 0.2)
+	quit_style.corner_radius_top_left = 6
+	quit_style.corner_radius_top_right = 6
+	quit_style.corner_radius_bottom_left = 6
+	quit_style.corner_radius_bottom_right = 6
+	quit_style.content_margin_left = 12.0
+	quit_style.content_margin_right = 12.0
+	quit_style.content_margin_top = 4.0
+	quit_style.content_margin_bottom = 4.0
+	quit_btn.add_theme_stylebox_override("normal", quit_style)
+	var quit_hover: StyleBoxFlat = quit_style.duplicate() as StyleBoxFlat
+	quit_hover.bg_color = Color(0.6, 0.25, 0.25)
+	quit_btn.add_theme_stylebox_override("hover", quit_hover)
+	quit_btn.add_theme_color_override("font_color", Color.WHITE)
+	quit_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	quit_btn.set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	quit_btn.position = Vector2(-80, 12)
+	quit_btn.pressed.connect(func() -> void: get_tree().quit())
+	add_child(quit_btn)
+
 	# メインコンテナ
 	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -64,6 +89,11 @@ func _build_ui() -> void:
 	var play_btn: Button = _create_button("対戦開始", Color(0.28, 0.55, 0.35))
 	play_btn.pressed.connect(_on_play_pressed)
 	btn_container.add_child(play_btn)
+
+	# オンライン対戦ボタン
+	var online_btn: Button = _create_button("オンライン対戦", Color(0.2, 0.4, 0.6))
+	online_btn.pressed.connect(_on_online_pressed)
+	btn_container.add_child(online_btn)
 
 	# ルール説明ボタン
 	var rules_btn: Button = _create_button("ルール説明", Color(0.35, 0.4, 0.55))
@@ -111,6 +141,10 @@ func _create_button(text: String, color: Color) -> Button:
 
 func _on_play_pressed() -> void:
 	GameEvents.scene_change_requested.emit("lobby", {})
+
+
+func _on_online_pressed() -> void:
+	GameEvents.scene_change_requested.emit("online_lobby", {})
 
 
 func _on_rules_pressed() -> void:
@@ -195,7 +229,14 @@ func _show_rules_popup() -> void:
 全員バッティングした場合は次のラウンドに持ち越し。
 
 [b]■ 勝利条件[/b]
-15ラウンド終了後、獲得した銘柄カードの合計点が最も高い人の勝ち！"""
+15ラウンド終了後、獲得した銘柄カードの合計点が最も高い人の勝ち！
+
+[b]■ 攻略のヒント[/b]
+・[color=#2a8c3a]高得点カード（+8〜+10）[/color]には大きい数字を温存しよう
+・[color=red]暴落株（-）[/color]が出たら、相手が出しそうな小さい数字を読んでずらす
+・バッティング狙いで相手と同じ数字をあえて出し、妨害するのも有効
+・小さい得点カードに大きい入札を使うのはもったいない — メリハリが大事
+・残りの手札と相手の使用済みカードを覚えておくと有利に"""
 	vbox.add_child(body)
 
 	# 閉じるボタン
@@ -295,7 +336,54 @@ func _show_settings_popup() -> void:
 	)
 	vol_row.add_child(vol_slider)
 
-	# セパレータ
+	# セパレータ（BGM / SFX）
+	var sep_sfx: HSeparator = HSeparator.new()
+	vbox.add_child(sep_sfx)
+
+	# SFX ON/OFF
+	var sfx_row: HBoxContainer = HBoxContainer.new()
+	sfx_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(sfx_row)
+
+	var sfx_label: Label = Label.new()
+	sfx_label.text = "効果音"
+	sfx_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sfx_label.add_theme_font_size_override("font_size", 22)
+	sfx_label.add_theme_color_override("font_color", Color(0.2, 0.18, 0.15))
+	sfx_row.add_child(sfx_label)
+
+	var sfx_toggle: CheckButton = CheckButton.new()
+	sfx_toggle.button_pressed = AudioManager.is_sfx_enabled()
+	sfx_toggle.toggled.connect(func(enabled: bool) -> void:
+		AudioManager.set_sfx_enabled(enabled)
+	)
+	sfx_row.add_child(sfx_toggle)
+
+	# SFX 音量スライダー
+	var sfx_vol_row: HBoxContainer = HBoxContainer.new()
+	sfx_vol_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(sfx_vol_row)
+
+	var sfx_vol_label: Label = Label.new()
+	sfx_vol_label.text = "音量"
+	sfx_vol_label.custom_minimum_size = Vector2(60, 0)
+	sfx_vol_label.add_theme_font_size_override("font_size", 22)
+	sfx_vol_label.add_theme_color_override("font_color", Color(0.2, 0.18, 0.15))
+	sfx_vol_row.add_child(sfx_vol_label)
+
+	var sfx_vol_slider: HSlider = HSlider.new()
+	sfx_vol_slider.min_value = 0.0
+	sfx_vol_slider.max_value = 1.0
+	sfx_vol_slider.step = 0.01
+	sfx_vol_slider.value = AudioManager.get_sfx_volume_linear()
+	sfx_vol_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sfx_vol_slider.custom_minimum_size = Vector2(250, 0)
+	sfx_vol_slider.value_changed.connect(func(val: float) -> void:
+		AudioManager.set_sfx_volume_linear(val)
+	)
+	sfx_vol_row.add_child(sfx_vol_slider)
+
+	# セパレータ（SFX / 背景色）
 	var sep2: HSeparator = HSeparator.new()
 	vbox.add_child(sep2)
 

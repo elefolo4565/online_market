@@ -10,6 +10,8 @@ var is_selectable: bool = false
 var is_selected: bool = false
 var is_batted: bool = false
 var _batting_anim_progress: float = 0.0
+var _batting_color: Color = Color(0.95, 0.15, 0.15)
+var _batting_shield: bool = false  ## true: シールド描画, false: バツマーク描画
 var is_won: bool = false
 var _win_anim_progress: float = 0.0
 var _win_color: Color = Color.GREEN
@@ -75,6 +77,15 @@ func set_font_sizes(value_size: int, name_size: int) -> void:
 		_value_label.add_theme_font_size_override("font_size", value_size)
 	if _name_label:
 		_name_label.add_theme_font_size_override("font_size", name_size)
+
+
+func set_value_only_mode() -> void:
+	## 名称ラベルを非表示にし、値ラベルを全体に拡張する（持ち越しカード用）
+	if _name_label:
+		_name_label.visible = false
+	if _value_label:
+		_value_label.anchor_top = 0.0
+		_value_label.anchor_bottom = 1.0
 
 
 func set_selected(selected: bool) -> void:
@@ -143,24 +154,27 @@ func _draw() -> void:
 			draw_rect(rect, Color(1.0, 0.85, 0.0, 0.25), true)
 			draw_rect(rect, Color(1.0, 0.85, 0.0), false, 3.0)
 
-		# バッティングバツマーク
+		# バッティングマーク
 		if is_batted and _batting_anim_progress > 0.0:
 			var cx: float = size.x * 0.5
 			var cy: float = size.y * 0.5
-			var arm: float = minf(size.x, size.y) * 0.45 * _batting_anim_progress
-			var line_w: float = 5.0 * _batting_anim_progress
-			var x_color: Color = Color(0.95, 0.15, 0.15, _batting_anim_progress)
-			draw_line(Vector2(cx - arm, cy - arm), Vector2(cx + arm, cy + arm), x_color, line_w)
-			draw_line(Vector2(cx + arm, cy - arm), Vector2(cx - arm, cy + arm), x_color, line_w)
+			var mark_color: Color = Color(_batting_color, _batting_anim_progress)
+			if _batting_shield:
+				_draw_shield(cx, cy, _batting_anim_progress, mark_color)
+			else:
+				var arm: float = minf(size.x, size.y) * 0.45 * _batting_anim_progress
+				var line_w: float = 5.0 * _batting_anim_progress
+				draw_line(Vector2(cx - arm, cy - arm), Vector2(cx + arm, cy + arm), mark_color, line_w)
+				draw_line(Vector2(cx + arm, cy - arm), Vector2(cx - arm, cy + arm), mark_color, line_w)
 
-		# 落札丸マーク
+		# 落札マーク（〇）表示
 		if is_won and _win_anim_progress > 0.0:
-			var cx2: float = size.x * 0.5
-			var cy2: float = size.y * 0.5
-			var radius: float = minf(size.x, size.y) * 0.45 * _win_anim_progress
-			var line_w2: float = 5.0 * _win_anim_progress
-			var circle_color: Color = Color(_win_color, _win_anim_progress)
-			draw_arc(Vector2(cx2, cy2), radius, 0.0, TAU, 64, circle_color, line_w2)
+			var cx: float = size.x * 0.5
+			var cy: float = size.y * 0.5
+			var radius: float = minf(size.x, size.y) * 0.4 * _win_anim_progress
+			var line_w: float = 5.0 * _win_anim_progress
+			var win_mark_color: Color = Color(_win_color, _win_anim_progress)
+			draw_arc(Vector2(cx, cy), radius, 0.0, TAU, 64, win_mark_color, line_w)
 	else:
 		# 裏面
 		draw_rect(rect, Color(0.2, 0.3, 0.5), true)
@@ -208,8 +222,10 @@ func show_lose_effect() -> void:
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
 
 
-func show_batting_mark() -> void:
+func show_batting_mark(color: Color = Color(0.95, 0.15, 0.15), shield: bool = false) -> void:
 	is_batted = true
+	_batting_color = color
+	_batting_shield = shield
 	_batting_anim_progress = 0.0
 	var bt: Tween = create_tween()
 	bt.tween_method(_set_batting_progress, 0.0, 1.0, 0.5) \
@@ -219,6 +235,25 @@ func show_batting_mark() -> void:
 func _set_batting_progress(value: float) -> void:
 	_batting_anim_progress = value
 	queue_redraw()
+
+
+func _draw_shield(cx: float, cy: float, progress: float, color: Color) -> void:
+	## 盾（シールド）形状を描画する
+	var half_w: float = minf(size.x, size.y) * 0.35 * progress
+	var half_h: float = minf(size.x, size.y) * 0.45 * progress
+	var line_w: float = 4.0 * progress
+	# 盾の輪郭: 上部は四角、下部は三角に収束
+	var points: PackedVector2Array = PackedVector2Array([
+		Vector2(cx - half_w, cy - half_h),       # 左上
+		Vector2(cx + half_w, cy - half_h),       # 右上
+		Vector2(cx + half_w, cy + half_h * 0.3), # 右中
+		Vector2(cx, cy + half_h),                # 下中央（尖り）
+		Vector2(cx - half_w, cy + half_h * 0.3), # 左中
+	])
+	# 閉じたポリゴンを線で描画
+	for i: int in points.size():
+		var next: int = (i + 1) % points.size()
+		draw_line(points[i], points[next], color, line_w)
 
 
 func show_win_mark(is_positive: bool) -> void:

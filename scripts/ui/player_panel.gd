@@ -88,9 +88,9 @@ func reveal_bid() -> void:
 	_bid_card.flip(true)
 
 
-func mark_batting() -> void:
+func mark_batting(color: Color = Color(0.95, 0.15, 0.15), shield: bool = false) -> void:
 	if _bid_card and _bid_card.visible:
-		_bid_card.show_batting_mark()
+		_bid_card.show_batting_mark(color, shield)
 
 
 func mark_win(is_positive: bool) -> void:

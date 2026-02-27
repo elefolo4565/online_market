@@ -27,6 +27,8 @@ func _build_ui() -> void:
 
 
 func _build_results() -> void:
+	GameEvents.sfx_requested.emit("game_over")
+
 	# スクロール対応
 	var scroll: ScrollContainer = ScrollContainer.new()
 	scroll.set_anchors_preset(Control.PRESET_FULL_RECT)

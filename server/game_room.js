@@ -1,7 +1,7 @@
 // 1ルームのゲーム進行管理
 const { ServerMsg, GameConfig, makeCard } = require('./protocol');
 const { resolve } = require('./round_resolver');
-const { decideBid, getAIName, getDifficultyName } = require('./server_ai');
+const { decideBid, generatePersonality, getAIName, getDifficultyName } = require('./server_ai');
 
 const Phase = {
   WAITING: 'waiting',
@@ -56,6 +56,7 @@ class GameRoom {
     this.players.set(id, {
       id, name, is_ai: true, ws: null,
       hand: [], acquired_cards: [], score: 0, ai_difficulty: difficulty,
+      personality: difficulty === 2 ? generatePersonality() : null,
     });
     return id;
   }
@@ -91,6 +92,19 @@ class GameRoom {
     this.phase = Phase.PLAYING;
     this._initDeck();
     this._initHands();
+
+    // AIの性格をデバッグ出力
+    for (const [pid, player] of this.players) {
+      if (player.is_ai) {
+        const diffName = getDifficultyName(player.ai_difficulty);
+        if (player.personality) {
+          const p = player.personality;
+          console.log(`[AI] ${player.name} (id=${pid}) : ${diffName} | 攻撃性=${p.aggression.toFixed(2)} 慎重さ=${p.caution.toFixed(2)} 効率=${p.efficiency.toFixed(2)} 揺らぎ=${p.noise.toFixed(2)}`);
+        } else {
+          console.log(`[AI] ${player.name} (id=${pid}) : ${diffName}`);
+        }
+      }
+    }
 
     // 各プレイヤーにゲーム開始を通知
     for (const [pid, player] of this.players) {
@@ -203,7 +217,8 @@ class GameRoom {
           player.hand,
           this.currentStockCard,
           this.carriedOverCards,
-          { playerCount: this.players.size, otherPlayersHands: otherHands }
+          { playerCount: this.players.size, otherPlayersHands: otherHands },
+          player.personality
         );
 
         this.bids[player.id] = cardValue;

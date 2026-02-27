@@ -7,17 +7,31 @@
  * @param {Object} stockCard - {type, value}
  * @param {Object[]} carriedOver - 持ち越しカード
  * @param {Object} gameInfo - 追加情報 {playerCount, otherPlayersHands}
+ * @param {Object} [personality] - カリスマAI用の性格パラメータ
  * @returns {number} 入札値
  */
-function decideBid(difficulty, hand, stockCard, carriedOver, gameInfo) {
+function decideBid(difficulty, hand, stockCard, carriedOver, gameInfo, personality) {
   if (hand.length === 0) return -1;
 
   switch (difficulty) {
     case 0: return randomStrategy(hand);
     case 1: return basicStrategy(hand, stockCard, carriedOver);
-    case 2: return advancedStrategy(hand, stockCard, carriedOver, gameInfo);
+    case 2: return advancedStrategy(hand, stockCard, carriedOver, gameInfo, personality);
     default: return randomStrategy(hand);
   }
+}
+
+/**
+ * カリスマAI用の性格パラメータを生成する
+ * @returns {Object} {aggression, caution, efficiency, noise}
+ */
+function generatePersonality() {
+  return {
+    aggression: 0.5 + Math.random(),        // 0.5〜1.5
+    caution: 0.3 + Math.random() * 0.7,     // 0.3〜1.0
+    efficiency: 0.1 + Math.random() * 0.4,  // 0.1〜0.5
+    noise: 0.05 + Math.random() * 0.25,     // 0.05〜0.3
+  };
 }
 
 function randomStrategy(hand) {
@@ -48,43 +62,41 @@ function basicStrategy(hand, stockCard, carriedOver) {
   return sorted[Math.min(index, sorted.length - 1)];
 }
 
-function advancedStrategy(hand, stockCard, carriedOver, gameInfo) {
+function advancedStrategy(hand, stockCard, carriedOver, gameInfo, personality) {
+  const p = personality || generatePersonality();
   const sorted = [...hand].sort((a, b) => a - b);
-  const stockValue = Math.abs(stockCard.value);
   const carriedBonus = carriedOver.reduce((sum, c) => sum + Math.abs(c.value), 0);
-  const effectiveValue = stockValue + carriedBonus;
+  const absStock = Math.abs(stockCard.value) + carriedBonus * 1.5;
 
   // 他プレイヤーの残り手札からバッティング確率を推定
   const otherHands = gameInfo.otherPlayersHands || [];
-  const otherCardCounts = {};
-  for (const h of otherHands) {
-    for (const v of h) {
-      otherCardCounts[v] = (otherCardCounts[v] || 0) + 1;
-    }
-  }
 
   let bestCard = sorted[0];
   let bestScore = -Infinity;
 
   for (const card of sorted) {
-    // ポジション評価
+    const handRatio = card / 15;
+
+    // ポジション評価（性格パラメータで重み付け）
     let positionValue;
-    const ratio = effectiveValue / 15;
     if (stockCard.value > 0) {
-      positionValue = (card / 15) * ratio;
+      positionValue = handRatio * absStock * p.aggression - card * p.efficiency;
     } else {
-      // マイナスカード: 中間の値が安全
-      const midDist = Math.abs(card - 8) / 7;
-      positionValue = midDist * 0.5 + (1 - card / 15) * 0.3;
+      positionValue = (1 - handRatio) * absStock + card * p.efficiency * p.caution;
     }
 
     // バッティングリスク
-    const battingCount = otherCardCounts[card] || 0;
+    let battingCount = 0;
+    for (const h of otherHands) {
+      if (h.includes(card)) battingCount++;
+    }
     const battingRisk = otherHands.length > 0
       ? battingCount / otherHands.length
       : 0.1;
 
-    const score = positionValue * (1.0 - battingRisk * 0.7);
+    // ノイズ付きスコア
+    const noiseOffset = (Math.random() * 2 - 1) * p.noise * (Math.abs(positionValue) + 1);
+    const score = positionValue * (1.0 - battingRisk * p.caution) + noiseOffset;
 
     if (score > bestScore) {
       bestScore = score;
@@ -113,4 +125,4 @@ function getDifficultyName(level) {
   }
 }
 
-module.exports = { decideBid, getAIName, getDifficultyName };
+module.exports = { decideBid, generatePersonality, getAIName, getDifficultyName };

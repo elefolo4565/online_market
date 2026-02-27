@@ -68,7 +68,7 @@ func _build_ui() -> void:
 
 	# サブタイトル
 	var subtitle: Label = Label.new()
-	subtitle.text = "— 入札と駆け引きのカードゲーム —"
+	subtitle.text = "- 入札と駆け引きのカードゲーム -"
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.add_theme_font_size_override("font_size", 20)
 	subtitle.add_theme_color_override("font_color", Color(0.7, 0.7, 0.75))
@@ -235,7 +235,7 @@ func _show_rules_popup() -> void:
 ・[color=#2a8c3a]高得点カード（+8〜+10）[/color]には大きい数字を温存しよう
 ・[color=red]暴落株（-）[/color]が出たら、相手が出しそうな小さい数字を読んでずらす
 ・バッティング狙いで相手と同じ数字をあえて出し、妨害するのも有効
-・小さい得点カードに大きい入札を使うのはもったいない — メリハリが大事
+・小さい得点カードに大きい入札を使うのはもったいない - メリハリが大事
 ・残りの手札と相手の使用済みカードを覚えておくと有利に"""
 	vbox.add_child(body)
 

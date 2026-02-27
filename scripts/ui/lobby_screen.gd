@@ -252,11 +252,17 @@ func _load_settings() -> void:
 	var config: ConfigFile = ConfigFile.new()
 	if config.load(SETTINGS_PATH) == OK:
 		_player_name = config.get_value("player", "name", "あなた") as String
+		_player_count = config.get_value("game", "player_count", 4) as int
+		_ai_difficulty = config.get_value("game", "ai_difficulty", 1) as int
+		_player_count = clampi(_player_count, GameConfig.MIN_PLAYERS, GameConfig.MAX_PLAYERS)
+		_ai_difficulty = clampi(_ai_difficulty, 0, 2)
 
 
 func _save_settings() -> void:
 	var config: ConfigFile = ConfigFile.new()
 	config.set_value("player", "name", _player_name)
+	config.set_value("game", "player_count", _player_count)
+	config.set_value("game", "ai_difficulty", _ai_difficulty)
 	config.save(SETTINGS_PATH)
 
 

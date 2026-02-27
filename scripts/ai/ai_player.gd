@@ -25,6 +25,17 @@ func _ensure_strategy() -> void:
 			_strategy = RandomStrategy.new()
 
 
+## カリスマ投資家の性格パラメータを文字列で返す（デバッグ用）
+func get_personality_info() -> String:
+	_ensure_strategy()
+	if _strategy is AdvancedStrategy:
+		var adv: AdvancedStrategy = _strategy as AdvancedStrategy
+		return "攻撃性=%.2f 慎重さ=%.2f 効率=%.2f 揺らぎ=%.2f" % [
+			adv._aggression, adv._caution, adv._efficiency, adv._noise
+		]
+	return ""
+
+
 static func get_difficulty_name(level: int) -> String:
 	match level:
 		0: return "ランダム投資家"

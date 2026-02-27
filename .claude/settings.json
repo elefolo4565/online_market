@@ -2,7 +2,21 @@
   "permissions": {
     "allow": [
       "Edit",
-      "Write"
+      "Write",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(git init*)",
+      "Bash(git add*)",
+      "Bash(git commit*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "Bash(cd * && git init*)",
+      "Bash(cd * && git add*)",
+      "Bash(cd * && git commit*)",
+      "Bash(cd * && git status*)",
+      "Bash(cd * && git diff*)",
+      "Bash(cd * && git log*)"
     ]
   }
 }

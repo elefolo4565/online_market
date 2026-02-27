@@ -7,7 +7,7 @@ signal disconnected()
 signal connection_error(message: String)
 signal message_received(type: String, data: Dictionary)
 
-const PRODUCTION_URL: String = "wss://secondly-market.onrender.com"
+const PRODUCTION_URL: String = "wss://elefolo2.com/ws/online_market"
 const LOCAL_URL: String = "ws://localhost:8080"
 var DEFAULT_URL: String = PRODUCTION_URL if OS.has_feature("web") else LOCAL_URL
 

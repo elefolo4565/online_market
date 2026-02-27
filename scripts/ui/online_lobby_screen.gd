@@ -130,12 +130,12 @@ func _show_menu() -> void:
 	count_label.custom_minimum_size = Vector2(60, 0)
 	count_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	var minus_btn: Button = _create_small_button("−")
+	var minus_btn: Button = _create_small_button("-")
 	minus_btn.pressed.connect(func() -> void:
 		_player_count = max(GameConfig.MIN_PLAYERS, _player_count - 1)
 		count_label.text = str(_player_count) + "人"
 	)
-	var plus_btn: Button = _create_small_button("＋")
+	var plus_btn: Button = _create_small_button("+")
 	plus_btn.pressed.connect(func() -> void:
 		_player_count = min(GameConfig.MAX_PLAYERS, _player_count + 1)
 		count_label.text = str(_player_count) + "人"

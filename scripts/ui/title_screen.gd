@@ -480,3 +480,34 @@ func _show_settings_popup() -> void:
 	close_btn.custom_minimum_size = Vector2(180, 48)
 	close_btn.pressed.connect(func() -> void: overlay.queue_free())
 	btn_center.add_child(close_btn)
+
+	# 設定初期化ボタン（右下）
+	var reset_row: HBoxContainer = HBoxContainer.new()
+	reset_row.alignment = BoxContainer.ALIGNMENT_END
+	vbox.add_child(reset_row)
+
+	var reset_btn: Button = Button.new()
+	reset_btn.text = "設定を初期化"
+	reset_btn.add_theme_font_size_override("font_size", 14)
+	var reset_style: StyleBoxFlat = StyleBoxFlat.new()
+	reset_style.bg_color = Color(0.5, 0.3, 0.3)
+	reset_style.corner_radius_top_left = 4
+	reset_style.corner_radius_top_right = 4
+	reset_style.corner_radius_bottom_left = 4
+	reset_style.corner_radius_bottom_right = 4
+	reset_style.content_margin_left = 12.0
+	reset_style.content_margin_right = 12.0
+	reset_style.content_margin_top = 6.0
+	reset_style.content_margin_bottom = 6.0
+	reset_btn.add_theme_stylebox_override("normal", reset_style)
+	var reset_hover: StyleBoxFlat = reset_style.duplicate() as StyleBoxFlat
+	reset_hover.bg_color = Color(0.6, 0.35, 0.35)
+	reset_btn.add_theme_stylebox_override("hover", reset_hover)
+	reset_btn.add_theme_color_override("font_color", Color.WHITE)
+	reset_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	reset_btn.pressed.connect(func() -> void:
+		AudioManager.reset_settings()
+		overlay.queue_free()
+		_show_settings_popup()
+	)
+	reset_row.add_child(reset_btn)

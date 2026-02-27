@@ -8,12 +8,12 @@ const SFX_POOL_SIZE: int = 4
 
 var _bgm_player: AudioStreamPlayer = null
 var _bgm_enabled: bool = true
-var _bgm_volume_db: float = 0.0
+var _bgm_volume_db: float = -14.0
 
 var _sfx_players: Array[AudioStreamPlayer] = []
 var _sfx_streams: Dictionary = {}  ## {String -> AudioStreamWAV}
 var _sfx_enabled: bool = true
-var _sfx_volume_db: float = 0.0
+var _sfx_volume_db: float = -14.0
 
 const DEFAULT_BG_COLOR: Color = Color(0.1, 0.13, 0.2)
 var _bg_color: Color = DEFAULT_BG_COLOR
@@ -180,6 +180,16 @@ func get_bg_color() -> Color:
 	return _bg_color
 
 
+## 全設定を初期値に戻す
+func reset_settings() -> void:
+	set_bgm_enabled(true)
+	set_bgm_volume_db(-14.0)
+	set_sfx_enabled(true)
+	set_sfx_volume_db(-14.0)
+	set_bg_color(DEFAULT_BG_COLOR)
+	_save_settings()
+
+
 # === 設定永続化 ===
 
 func _save_settings() -> void:
@@ -197,9 +207,9 @@ func _load_settings() -> void:
 	var err: Error = config.load(CONFIG_PATH)
 	if err == OK:
 		_bgm_enabled = config.get_value("bgm", "enabled", true) as bool
-		_bgm_volume_db = config.get_value("bgm", "volume_db", 0.0) as float
+		_bgm_volume_db = config.get_value("bgm", "volume_db", -14.0) as float
 		_sfx_enabled = config.get_value("sfx", "enabled", true) as bool
-		_sfx_volume_db = config.get_value("sfx", "volume_db", 0.0) as float
+		_sfx_volume_db = config.get_value("sfx", "volume_db", -14.0) as float
 		var bg_html: String = config.get_value("display", "bg_color", "") as String
 		if not bg_html.is_empty():
 			_bg_color = Color.from_string(bg_html, DEFAULT_BG_COLOR)

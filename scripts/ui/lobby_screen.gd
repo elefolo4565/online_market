@@ -85,7 +85,7 @@ func _build_ui() -> void:
 	count_row.add_theme_constant_override("separation", 16)
 	count_section.add_child(count_row)
 
-	var minus_btn: Button = _create_small_button("−")
+	var minus_btn: Button = _create_small_button("-")
 	minus_btn.pressed.connect(_on_count_minus)
 	count_row.add_child(minus_btn)
 
@@ -97,7 +97,7 @@ func _build_ui() -> void:
 	_count_label.add_theme_color_override("font_color", Color.WHITE)
 	count_row.add_child(_count_label)
 
-	var plus_btn: Button = _create_small_button("＋")
+	var plus_btn: Button = _create_small_button("+")
 	plus_btn.pressed.connect(_on_count_plus)
 	count_row.add_child(plus_btn)
 
@@ -110,7 +110,7 @@ func _build_ui() -> void:
 	diff_row.add_theme_constant_override("separation", 16)
 	diff_section.add_child(diff_row)
 
-	var diff_minus: Button = _create_small_button("◀")
+	var diff_minus: Button = _create_small_button("<")
 	diff_minus.pressed.connect(_on_diff_minus)
 	diff_row.add_child(diff_minus)
 
@@ -122,7 +122,7 @@ func _build_ui() -> void:
 	_difficulty_label.add_theme_color_override("font_color", Color.WHITE)
 	diff_row.add_child(_difficulty_label)
 
-	var diff_plus: Button = _create_small_button("▶")
+	var diff_plus: Button = _create_small_button(">")
 	diff_plus.pressed.connect(_on_diff_plus)
 	diff_row.add_child(diff_plus)
 

@@ -272,6 +272,10 @@ func _on_start_pressed() -> void:
 	else:
 		_player_name = _name_edit.text.strip_edges()
 
+	# スマホ/Webではフルスクリーンに切り替え
+	if OS.has_feature("web") or OS.has_feature("mobile"):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+
 	_save_settings()
 
 	var configs: Array[Dictionary] = []

@@ -51,6 +51,16 @@ func _build_ui() -> void:
 	quit_btn.pressed.connect(func() -> void: get_tree().quit())
 	add_child(quit_btn)
 
+	# バージョン情報（右下）
+	var version_label: Label = Label.new()
+	version_label.text = "ver 2026.02.28.1"
+	version_label.add_theme_font_size_override("font_size", 12)
+	version_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.55))
+	version_label.set_anchors_preset(Control.PRESET_BOTTOM_RIGHT)
+	version_label.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	version_label.position = Vector2(-160, -30)
+	add_child(version_label)
+
 	# メインコンテナ
 	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER

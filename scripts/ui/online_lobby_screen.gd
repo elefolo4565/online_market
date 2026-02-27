@@ -229,6 +229,9 @@ func _show_waiting_room(players: Array) -> void:
 
 		_start_btn = _create_action_button("ゲーム開始", Color(0.28, 0.55, 0.35))
 		_start_btn.pressed.connect(func() -> void:
+			# スマホ/Webではフルスクリーンに切り替え
+			if OS.has_feature("web") or OS.has_feature("mobile"):
+				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 			if _network:
 				_network.start_game()
 		)

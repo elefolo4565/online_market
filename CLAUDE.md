@@ -6,7 +6,7 @@
 ## 技術スタック
 - Godot Engine 4.6.1
 - GDScript
-- サーバー: Node.js (WebSocket) — Render にデプロイ予定
+- サーバー: Node.js (WebSocket) — さくらVPS (Rocky Linux) にデプロイ済み
 
 ## アーキテクチャ
 - **ロジック層** (`scripts/logic/`): GameState, RoundResolver, GameManager — UIに依存しない
@@ -60,6 +60,29 @@
 ## Git ルール
 - 「commit」と言われたら確認なしで即座にコミットする（git status/diff/log の事前確認は不要）
 - 全変更ファイルをステージングし、変更内容に応じた日本語コミットメッセージを作成する
+
+## デプロイ手順
+
+### サーバー（Node.js WebSocket）の更新
+サーバーはさくらVPS (elefolo2.com) の Rocky Linux 上で稼働。
+```bash
+# 1. VPSにSSH接続
+ssh elefolo2.com
+
+# 2. サーバーディレクトリで最新コードを取得
+cd /var/www/online_market_repo/server
+git pull
+
+# 3. サーバーを再起動（pm2の場合）
+pm2 restart online-market
+```
+- **サーバーパス**: `/var/www/online_market_repo/server`
+- **接続先URL**: `wss://elefolo2.com/ws/online_market`（本番） / `ws://localhost:8080`（ローカル）
+- **server/ 配下のファイルを変更した場合は必ずサーバー再起動が必要**
+
+### クライアント（Godot Web版）の更新
+1. Godotエディタで Web エクスポートを実行
+2. エクスポートされたファイルをVPSのWebサーバーにアップロード
 
 ## 注意事項
 - シーンファイルは手動編集せず、可能な限りスクリプトから生成・操作する

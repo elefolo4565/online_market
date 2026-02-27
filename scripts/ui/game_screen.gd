@@ -22,6 +22,7 @@ var _bid_button: Button
 var _hand_cards: Array[CardDisplay] = []
 var _opponent_panels: Dictionary = {}  ## {player_id: int -> PlayerPanel}
 var _message_label: Label
+var _bg: ColorRect = null
 var _bids_reveal_complete: bool = false
 var _round_animation_complete: bool = false
 
@@ -34,6 +35,12 @@ func init_with_params(params: Dictionary) -> void:
 
 func _ready() -> void:
 	_build_ui()
+	GameEvents.bg_color_changed.connect(_on_bg_color_changed)
+
+
+func _on_bg_color_changed(color: Color) -> void:
+	if _bg:
+		_bg.color = color
 
 
 func _start_game(player_configs: Array[Dictionary]) -> void:
@@ -52,10 +59,10 @@ func _start_game(player_configs: Array[Dictionary]) -> void:
 
 func _build_ui() -> void:
 	# 背景
-	var bg: ColorRect = ColorRect.new()
-	bg.color = Color(0.1, 0.13, 0.2)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	_bg = ColorRect.new()
+	_bg.color = AudioManager.get_bg_color()
+	_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_bg)
 
 	# メインレイアウト
 	var main_vbox: VBoxContainer = VBoxContainer.new()
@@ -79,7 +86,8 @@ func _build_ui() -> void:
 	_top_bar.add_child(_round_label)
 
 	_carried_label = Label.new()
-	_carried_label.text = "持越: なし"
+	_carried_label.text = ""
+	_carried_label.visible = false
 	_carried_label.add_theme_font_size_override("font_size", 18)
 	_carried_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.75))
 	_top_bar.add_child(_carried_label)
@@ -146,7 +154,7 @@ func _build_ui() -> void:
 
 	# === 手札エリア ===
 	var hand_scroll: ScrollContainer = ScrollContainer.new()
-	hand_scroll.custom_minimum_size = Vector2(0, 120)
+	hand_scroll.custom_minimum_size = Vector2(0, 134)
 	hand_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	hand_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	main_vbox.add_child(hand_scroll)
@@ -154,6 +162,7 @@ func _build_ui() -> void:
 	var hand_margin: MarginContainer = MarginContainer.new()
 	hand_margin.add_theme_constant_override("margin_left", 16)
 	hand_margin.add_theme_constant_override("margin_right", 16)
+	hand_margin.add_theme_constant_override("margin_top", 14)
 	hand_margin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hand_scroll.add_child(hand_margin)
 
@@ -290,9 +299,11 @@ func _update_carried_display(cards: Array[CardData]) -> void:
 		child.queue_free()
 
 	if cards.is_empty():
-		_carried_label.text = "持越: なし"
+		_carried_label.text = ""
+		_carried_label.visible = false
 		return
 
+	_carried_label.visible = true
 	_carried_label.text = "持越: " + str(cards.size()) + "枚"
 	for card: CardData in cards:
 		var mini_card: CardDisplay = CardDisplay.new()

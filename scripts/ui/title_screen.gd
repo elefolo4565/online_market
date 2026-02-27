@@ -1,17 +1,25 @@
 extends Control
 ## タイトル画面
 
+var _bg: ColorRect = null
+
 
 func _ready() -> void:
 	_build_ui()
+	GameEvents.bg_color_changed.connect(_on_bg_color_changed)
+
+
+func _on_bg_color_changed(color: Color) -> void:
+	if _bg:
+		_bg.color = color
 
 
 func _build_ui() -> void:
 	# 背景
-	var bg: ColorRect = ColorRect.new()
-	bg.color = Color(0.12, 0.15, 0.22)
-	bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(bg)
+	_bg = ColorRect.new()
+	_bg.color = AudioManager.get_bg_color()
+	_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(_bg)
 
 	# 中央揃えコンテナ
 	var center: CenterContainer = CenterContainer.new()
@@ -286,6 +294,95 @@ func _show_settings_popup() -> void:
 		AudioManager.set_bgm_volume_linear(val)
 	)
 	vol_row.add_child(vol_slider)
+
+	# セパレータ
+	var sep2: HSeparator = HSeparator.new()
+	vbox.add_child(sep2)
+
+	# 背景色セクション
+	var bg_label: Label = Label.new()
+	bg_label.text = "背景色"
+	bg_label.add_theme_font_size_override("font_size", 22)
+	bg_label.add_theme_color_override("font_color", Color(0.2, 0.18, 0.15))
+	vbox.add_child(bg_label)
+
+	# プリセット色ボタン
+	var presets: Array[Dictionary] = [
+		{"name": "ダークネイビー", "color": Color(0.1, 0.13, 0.2)},
+		{"name": "スカイブルー", "color": Color(0.55, 0.75, 0.9)},
+		{"name": "フォレストグリーン", "color": Color(0.15, 0.3, 0.2)},
+		{"name": "ワインレッド", "color": Color(0.35, 0.12, 0.15)},
+		{"name": "ダークパープル", "color": Color(0.2, 0.12, 0.3)},
+		{"name": "ウォームグレー", "color": Color(0.3, 0.28, 0.26)},
+	]
+
+	var preset_grid: GridContainer = GridContainer.new()
+	preset_grid.columns = 3
+	preset_grid.add_theme_constant_override("h_separation", 8)
+	preset_grid.add_theme_constant_override("v_separation", 8)
+	vbox.add_child(preset_grid)
+
+	var current_color: Color = AudioManager.get_bg_color()
+	for preset: Dictionary in presets:
+		var p_color: Color = preset["color"] as Color
+		var p_name: String = preset["name"] as String
+		var p_btn: Button = Button.new()
+		p_btn.custom_minimum_size = Vector2(130, 40)
+		p_btn.text = p_name
+		p_btn.add_theme_font_size_override("font_size", 13)
+
+		var p_style: StyleBoxFlat = StyleBoxFlat.new()
+		p_style.bg_color = p_color
+		p_style.corner_radius_top_left = 6
+		p_style.corner_radius_top_right = 6
+		p_style.corner_radius_bottom_left = 6
+		p_style.corner_radius_bottom_right = 6
+		p_style.content_margin_left = 8.0
+		p_style.content_margin_right = 8.0
+		p_style.content_margin_top = 6.0
+		p_style.content_margin_bottom = 6.0
+		# 選択中は枠線で示す
+		if p_color.is_equal_approx(current_color):
+			p_style.border_width_top = 3
+			p_style.border_width_bottom = 3
+			p_style.border_width_left = 3
+			p_style.border_width_right = 3
+			p_style.border_color = Color(0.95, 0.85, 0.4)
+		p_btn.add_theme_stylebox_override("normal", p_style)
+
+		var p_hover: StyleBoxFlat = p_style.duplicate() as StyleBoxFlat
+		p_hover.bg_color = p_color.lightened(0.15)
+		p_btn.add_theme_stylebox_override("hover", p_hover)
+
+		p_btn.add_theme_color_override("font_color", Color.WHITE)
+		p_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+
+		p_btn.pressed.connect(func() -> void:
+			AudioManager.set_bg_color(p_color)
+			overlay.queue_free()
+			_show_settings_popup()
+		)
+		preset_grid.add_child(p_btn)
+
+	# カスタムカラー
+	var custom_row: HBoxContainer = HBoxContainer.new()
+	custom_row.add_theme_constant_override("separation", 12)
+	vbox.add_child(custom_row)
+
+	var custom_label: Label = Label.new()
+	custom_label.text = "カスタム"
+	custom_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	custom_label.add_theme_font_size_override("font_size", 22)
+	custom_label.add_theme_color_override("font_color", Color(0.2, 0.18, 0.15))
+	custom_row.add_child(custom_label)
+
+	var color_picker_btn: ColorPickerButton = ColorPickerButton.new()
+	color_picker_btn.color = AudioManager.get_bg_color()
+	color_picker_btn.custom_minimum_size = Vector2(80, 36)
+	color_picker_btn.color_changed.connect(func(color: Color) -> void:
+		AudioManager.set_bg_color(color)
+	)
+	custom_row.add_child(color_picker_btn)
 
 	# 閉じるボタン
 	var btn_center: CenterContainer = CenterContainer.new()

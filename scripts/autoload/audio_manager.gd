@@ -15,6 +15,9 @@ var _sfx_streams: Dictionary = {}  ## {String -> AudioStreamWAV}
 var _sfx_enabled: bool = true
 var _sfx_volume_db: float = 0.0
 
+const DEFAULT_BG_COLOR: Color = Color(0.1, 0.13, 0.2)
+var _bg_color: Color = DEFAULT_BG_COLOR
+
 ## 設定変更通知
 signal bgm_settings_changed()
 signal sfx_settings_changed()
@@ -165,6 +168,18 @@ func set_sfx_volume_linear(linear: float) -> void:
 		set_sfx_volume_db(linear_to_db(clamped))
 
 
+# === 背景色設定 ===
+
+func set_bg_color(color: Color) -> void:
+	_bg_color = color
+	_save_settings()
+	GameEvents.bg_color_changed.emit(color)
+
+
+func get_bg_color() -> Color:
+	return _bg_color
+
+
 # === 設定永続化 ===
 
 func _save_settings() -> void:
@@ -173,6 +188,7 @@ func _save_settings() -> void:
 	config.set_value("bgm", "volume_db", _bgm_volume_db)
 	config.set_value("sfx", "enabled", _sfx_enabled)
 	config.set_value("sfx", "volume_db", _sfx_volume_db)
+	config.set_value("display", "bg_color", _bg_color.to_html(false))
 	config.save(CONFIG_PATH)
 
 
@@ -184,3 +200,6 @@ func _load_settings() -> void:
 		_bgm_volume_db = config.get_value("bgm", "volume_db", 0.0) as float
 		_sfx_enabled = config.get_value("sfx", "enabled", true) as bool
 		_sfx_volume_db = config.get_value("sfx", "volume_db", 0.0) as float
+		var bg_html: String = config.get_value("display", "bg_color", "") as String
+		if not bg_html.is_empty():
+			_bg_color = Color.from_string(bg_html, DEFAULT_BG_COLOR)

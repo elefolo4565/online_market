@@ -23,19 +23,35 @@ var _base_position_saved: bool = false
 func _ready() -> void:
 	clip_contents = true
 
-	# 数値ラベル
+	# 数値ラベル（上部60%、左右4pxマージン）
 	_value_label = Label.new()
 	_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_value_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_value_label.add_theme_font_size_override("font_size", 28)
+	_value_label.anchor_left = 0.0
+	_value_label.anchor_top = 0.1
+	_value_label.anchor_right = 1.0
+	_value_label.anchor_bottom = 0.6
+	_value_label.offset_left = 4
+	_value_label.offset_top = 0
+	_value_label.offset_right = -4
+	_value_label.offset_bottom = 0
 	add_child(_value_label)
 
-	# 名前ラベル
+	# 名前ラベル（下部40%、横いっぱい）
 	_name_label = Label.new()
 	_name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_name_label.add_theme_font_size_override("font_size", 12)
 	_name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_name_label.anchor_left = 0.0
+	_name_label.anchor_top = 0.6
+	_name_label.anchor_right = 1.0
+	_name_label.anchor_bottom = 1.0
+	_name_label.offset_left = 0
+	_name_label.offset_top = 0
+	_name_label.offset_right = 0
+	_name_label.offset_bottom = 0
 	add_child(_name_label)
 
 	mouse_entered.connect(_on_mouse_entered)
@@ -106,12 +122,8 @@ func _update_labels() -> void:
 
 
 func _layout_labels() -> void:
-	if _value_label == null:
-		return
-	_value_label.position = Vector2(4, size.y * 0.15)
-	_value_label.size = Vector2(size.x - 8, size.y * 0.45)
-	_name_label.position = Vector2(4, size.y * 0.58)
-	_name_label.size = Vector2(size.x - 8, size.y * 0.35)
+	# アンカーで自動レイアウトされるため手動計算は不要
+	pass
 
 
 func _draw() -> void:
@@ -192,7 +204,7 @@ func show_lose_effect() -> void:
 	lt.set_parallel(true)
 	lt.tween_property(self, "modulate", Color(0.5, 0.5, 0.55), 0.5) \
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
-	lt.tween_property(self, "rotation", deg_to_rad(-5.0), 0.5) \
+	lt.tween_property(self, "rotation", deg_to_rad(5.0), 0.5) \
 		.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
 
 

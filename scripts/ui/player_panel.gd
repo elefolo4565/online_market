@@ -3,6 +3,7 @@ extends PanelContainer
 ## 対戦相手の情報パネル
 
 var player_state: PlayerState = null
+var is_disconnected: bool = false
 var _name_label: Label
 var _score_label: Label
 var _bid_card: CardDisplay = null
@@ -72,7 +73,12 @@ func update_display() -> void:
 		return
 	_name_label.text = player_state.player_name
 	_score_label.text = str(player_state.score) + "pt"
-	_status_label.text = "残り " + str(player_state.hand.size()) + "枚"
+	if is_disconnected:
+		_status_label.text = "AI操作中"
+		_status_label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
+	else:
+		_status_label.text = ""
+		_status_label.add_theme_color_override("font_color", Color(0.6, 0.65, 0.7))
 
 
 func show_bid(card: CardData) -> void:
@@ -115,8 +121,17 @@ func clear_bid() -> void:
 
 
 func show_bid_placed() -> void:
+	if is_disconnected:
+		return
 	_status_label.text = "入札済み"
 	_status_label.add_theme_color_override("font_color", Color(0.4, 0.8, 0.5))
+
+
+func mark_disconnected() -> void:
+	is_disconnected = true
+	_name_label.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	_status_label.text = "AI操作中"
+	_status_label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
 
 
 func highlight_winner() -> void:

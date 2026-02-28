@@ -1,110 +1,123 @@
-// サーバーサイドAI（GDScriptから移植）
+// サーバーサイドAI — レベル(1-10)ベースの統合戦略
 
 /**
- * AI入札を決定する
- * @param {number} difficulty - 0:ランダム, 1:堅実, 2:カリスマ
- * @param {number[]} hand - 残り手札の値配列
- * @param {Object} stockCard - {type, value}
- * @param {Object[]} carriedOver - 持ち越しカード
- * @param {Object} gameInfo - 追加情報 {playerCount, otherPlayersHands}
- * @param {Object} [personality] - カリスマAI用の性格パラメータ
- * @returns {number} 入札値
+ * レベルからAIパラメータを生成する（個体差ランダム付き）
+ * @param {number} level - 1〜10
+ * @returns {Object} AIパラメータ
  */
-function decideBid(difficulty, hand, stockCard, carriedOver, gameInfo, personality) {
-  if (hand.length === 0) return -1;
+function createAIParams(level) {
+  level = Math.max(1, Math.min(10, level));
+  const t = (level - 1) / 9.0; // 0.0 〜 1.0
 
-  switch (difficulty) {
-    case 0: return randomStrategy(hand);
-    case 1: return basicStrategy(hand, stockCard, carriedOver);
-    case 2: return advancedStrategy(hand, stockCard, carriedOver, gameInfo, personality);
-    default: return randomStrategy(hand);
-  }
-}
+  const variation = Math.max((1.0 - t) * 0.3, 0.08);
+  const vary = (base, v) => base + (Math.random() * 2 - 1) * v;
 
-/**
- * カリスマAI用の性格パラメータを生成する
- * @returns {Object} {aggression, caution, efficiency, noise}
- */
-function generatePersonality() {
   return {
-    aggression: 0.5 + Math.random(),        // 0.5〜1.5
-    caution: 0.3 + Math.random() * 0.7,     // 0.3〜1.0
-    efficiency: 0.1 + Math.random() * 0.4,  // 0.1〜0.5
-    noise: 0.05 + Math.random() * 0.25,     // 0.05〜0.3
+    level,
+    skill: Math.max(0, Math.min(1, vary(t, variation))),
+    noise: Math.max(0.01, lerp(0.5, 0.08, t) + (Math.random() * 2 - 1) * variation * 0.5),
+    caution: Math.max(0, Math.min(1, vary(lerp(0.0, 0.9, t * t), variation))),
+    aggression: Math.max(0.3, vary(lerp(1.0, 1.2, t), variation)),
+    efficiency: Math.max(0, Math.min(0.6, vary(lerp(0.0, 0.4, t), variation * 0.5))),
+    opponentAwareness: Math.max(0, Math.min(1, level < 8 ? 0.0 : (level - 7) / 3.0)),
   };
 }
 
-function randomStrategy(hand) {
-  return hand[Math.floor(Math.random() * hand.length)];
+function lerp(a, b, t) {
+  return a + (b - a) * t;
 }
 
-function basicStrategy(hand, stockCard, carriedOver) {
+/**
+ * AI入札を決定する
+ * @param {number} level - 1〜10
+ * @param {number[]} hand - 残り手札の値配列
+ * @param {Object} stockCard - {type, value}
+ * @param {Object[]} carriedOver - 持ち越しカード
+ * @param {Object} gameInfo - {playerCount, otherPlayersHands}
+ * @param {Object} [params] - createAIParams()で生成済みのパラメータ（省略時は自動生成）
+ * @returns {number} 入札値
+ */
+function decideBid(level, hand, stockCard, carriedOver, gameInfo, params) {
+  if (hand.length === 0) return -1;
+
+  const p = params || createAIParams(level);
   const sorted = [...hand].sort((a, b) => a - b);
-  const stockValue = Math.abs(stockCard.value);
-  const carriedBonus = carriedOver.reduce((sum, c) => sum + Math.abs(c.value), 0);
-  const effectiveValue = stockValue + carriedBonus;
 
-  // 実効価値に応じたカード位置を決定（15段階中何番目を出すか）
-  const ratio = Math.min(effectiveValue / 15, 1.0);
-  // ランダム性を加味
-  const jitter = (Math.random() - 0.5) * 0.2;
-  const adjustedRatio = Math.max(0, Math.min(1, ratio + jitter));
+  // 持ち越しボーナス（カード価値合計ベース）
+  const carriedBonus = carriedOver.reduce((sum, c) => sum + Math.abs(c.value), 0) * 1.5;
+  const absStock = Math.abs(stockCard.value) + carriedBonus;
 
-  let index;
-  if (stockCard.value > 0) {
-    // プラスカード: 高い値を出したい
-    index = Math.floor(adjustedRatio * (sorted.length - 1));
-  } else {
-    // マイナスカード: 低い値は出したくない → 中〜高めを出す
-    index = Math.floor((0.3 + adjustedRatio * 0.7) * (sorted.length - 1));
-  }
-
-  return sorted[Math.min(index, sorted.length - 1)];
-}
-
-function advancedStrategy(hand, stockCard, carriedOver, gameInfo, personality) {
-  const p = personality || generatePersonality();
-  const sorted = [...hand].sort((a, b) => a - b);
-  const carriedBonus = carriedOver.reduce((sum, c) => sum + Math.abs(c.value), 0);
-  const absStock = Math.abs(stockCard.value) + carriedBonus * 1.5;
-
-  // 他プレイヤーの残り手札からバッティング確率を推定
   const otherHands = gameInfo.otherPlayersHands || [];
 
   let bestCard = sorted[0];
   let bestScore = -Infinity;
 
   for (const card of sorted) {
-    const handRatio = card / 15;
+    // 戦略的スコア
+    const strategicScore = evaluate(card, stockCard.value, absStock, otherHands, p);
 
-    // ポジション評価（性格パラメータで重み付け）
-    let positionValue;
-    if (stockCard.value > 0) {
-      positionValue = handRatio * absStock * p.aggression - card * p.efficiency;
-    } else {
-      positionValue = (1 - handRatio) * absStock + card * p.efficiency * p.caution;
-    }
+    // ランダムスコア
+    const randomScore = Math.random();
 
-    // バッティングリスク
-    let battingCount = 0;
-    for (const h of otherHands) {
-      if (h.includes(card)) battingCount++;
-    }
-    const battingRisk = otherHands.length > 0
-      ? battingCount / otherHands.length
-      : 0.1;
+    // skillでブレンド: skill=0で完全ランダム、skill=1で計算通り
+    const blended = lerp(randomScore, strategicScore, p.skill);
 
-    // ノイズ付きスコア
-    const noiseOffset = (Math.random() * 2 - 1) * p.noise * (Math.abs(positionValue) + 1);
-    const score = positionValue * (1.0 - battingRisk * p.caution) + noiseOffset;
-
-    if (score > bestScore) {
-      bestScore = score;
+    if (blended > bestScore) {
+      bestScore = blended;
       bestCard = card;
     }
   }
 
   return bestCard;
+}
+
+function evaluate(bidValue, stockValue, absStock, otherHands, p) {
+  const handRatio = bidValue / 15;
+
+  // ポジション評価
+  let positionValue;
+  if (stockValue > 0) {
+    positionValue = handRatio * absStock * p.aggression - bidValue * p.efficiency;
+  } else {
+    // マイナスカード: 最小入札を避けつつ高カードの浪費も抑える
+    // handRatio 0.6付近にピークを作り、自然な分散を促す
+    const safety = handRatio * absStock * p.caution;
+    const waste = Math.max(handRatio - 0.6, 0) * absStock * p.efficiency * 3.0;
+    positionValue = safety - waste;
+  }
+
+  // バッティングリスク
+  const battingRisk = estimateBattingRisk(bidValue, otherHands, p.opponentAwareness);
+
+  // 高得点プラスカードではバッティングリスクを受け入れて積極的に入札する
+  let effectiveCaution = p.caution;
+  if (stockValue > 0) {
+    const valueFactor = Math.min(absStock / 10.0, 1.0);
+    effectiveCaution = p.caution * (1.0 - valueFactor * 0.7);
+  }
+
+  // ノイズ（マイナスカードでは分散を大きくしてバッティングを減らす）
+  const noiseMult = stockValue < 0 ? 2.5 : 1.0;
+  const noiseOffset = (Math.random() * 2 - 1) * p.noise * noiseMult * absStock;
+
+  return positionValue * (1.0 - battingRisk * effectiveCaution) + noiseOffset;
+}
+
+function estimateBattingRisk(value, otherHands, awareness) {
+  if (otherHands.length === 0) return 0;
+
+  const estimatedRisk = 1.0 / (otherHands.length + 1);
+
+  if (awareness > 0) {
+    let count = 0;
+    for (const h of otherHands) {
+      if (h.includes(value)) count++;
+    }
+    const actualRisk = count / otherHands.length;
+    return lerp(estimatedRisk, actualRisk, awareness);
+  }
+
+  return estimatedRisk;
 }
 
 // AI名プール
@@ -117,12 +130,7 @@ function getAIName(usedNames) {
 }
 
 function getDifficultyName(level) {
-  switch (level) {
-    case 0: return 'ランダム投資家';
-    case 1: return '堅実投資家';
-    case 2: return 'カリスマ投資家';
-    default: return '投資家';
-  }
+  return `Lv.${level}`;
 }
 
-module.exports = { decideBid, generatePersonality, getAIName, getDifficultyName };
+module.exports = { decideBid, createAIParams, getAIName, getDifficultyName };

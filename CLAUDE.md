@@ -87,3 +87,8 @@ pm2 restart online-market
 ## 注意事項
 - シーンファイルは手動編集せず、可能な限りスクリプトから生成・操作する
 - アセットのインポート設定は .godot/imported/ に自動生成される
+
+## クレジット
+- BGM 盤面の闘い 
+  - 作成者 shimtone様 https://dova-s.jp/_contents/author/profile295.html
+  - 楽曲URL https://dova-s.jp/bgm/play18956.html

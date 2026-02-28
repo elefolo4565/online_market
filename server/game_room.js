@@ -1,7 +1,7 @@
 // 1ルームのゲーム進行管理
 const { ServerMsg, GameConfig, makeCard } = require('./protocol');
 const { resolve } = require('./round_resolver');
-const { decideBid, generatePersonality, getAIName, getDifficultyName } = require('./server_ai');
+const { decideBid, createAIParams, getAIName, getDifficultyName } = require('./server_ai');
 
 const Phase = {
   WAITING: 'waiting',
@@ -56,7 +56,7 @@ class GameRoom {
     this.players.set(id, {
       id, name, is_ai: true, ws: null,
       hand: [], acquired_cards: [], score: 0, ai_difficulty: difficulty,
-      personality: difficulty === 2 ? generatePersonality() : null,
+      ai_params: createAIParams(difficulty),
     });
     return id;
   }
@@ -71,7 +71,25 @@ class GameRoom {
       // ゲーム中の切断 → AIに置換
       player.is_ai = true;
       player.ws = null;
-      player.ai_difficulty = 1;
+      player.ai_difficulty = 5;
+      player.ai_params = createAIParams(5);
+
+      // 入札フェーズで未入札なら即座にAI入札
+      if (this.phase === Phase.ROUND_BIDDING && this.bids[playerId] === undefined) {
+        if (player.hand.length > 0) {
+          const cardValue = decideBid(
+            player.ai_difficulty,
+            player.hand,
+            this.currentStockCard,
+            this.carriedOverCards,
+            { playerCount: this.players.size, otherPlayersHands: [] },
+            player.ai_params
+          );
+          this.bids[playerId] = cardValue;
+          this._broadcast(ServerMsg.BID_RECEIVED, { player_id: playerId });
+          this._checkAllBids();
+        }
+      }
     }
   }
 
@@ -93,16 +111,11 @@ class GameRoom {
     this._initDeck();
     this._initHands();
 
-    // AIの性格をデバッグ出力
+    // AIのパラメータをデバッグ出力
     for (const [pid, player] of this.players) {
-      if (player.is_ai) {
-        const diffName = getDifficultyName(player.ai_difficulty);
-        if (player.personality) {
-          const p = player.personality;
-          console.log(`[AI] ${player.name} (id=${pid}) : ${diffName} | 攻撃性=${p.aggression.toFixed(2)} 慎重さ=${p.caution.toFixed(2)} 効率=${p.efficiency.toFixed(2)} 揺らぎ=${p.noise.toFixed(2)}`);
-        } else {
-          console.log(`[AI] ${player.name} (id=${pid}) : ${diffName}`);
-        }
+      if (player.is_ai && player.ai_params) {
+        const p = player.ai_params;
+        console.log(`[AI] ${player.name} (id=${pid}) : ${getDifficultyName(player.ai_difficulty)} | skill=${p.skill.toFixed(2)} noise=${p.noise.toFixed(2)} caution=${p.caution.toFixed(2)} aggr=${p.aggression.toFixed(2)} eff=${p.efficiency.toFixed(2)} aware=${p.opponentAwareness.toFixed(2)}`);
       }
     }
 
@@ -204,7 +217,7 @@ class GameRoom {
         if (this.phase !== Phase.ROUND_BIDDING) return;
         if (this.bids[player.id] !== undefined) return;
 
-        // 他プレイヤーの手札情報を収集（Advanced AI用）
+        // 他プレイヤーの手札情報を収集（高レベルAI用）
         const otherHands = [];
         for (const p of this.players.values()) {
           if (p.id !== player.id) {
@@ -218,7 +231,7 @@ class GameRoom {
           this.currentStockCard,
           this.carriedOverCards,
           { playerCount: this.players.size, otherPlayersHands: otherHands },
-          player.personality
+          player.ai_params
         );
 
         this.bids[player.id] = cardValue;

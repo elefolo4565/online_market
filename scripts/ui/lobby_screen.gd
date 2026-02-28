@@ -8,7 +8,7 @@ const AI_NAMES: Array[String] = [
 const SETTINGS_PATH: String = "user://settings.cfg"
 
 var _player_count: int = 4
-var _ai_difficulty: int = 1
+var _ai_difficulty: int = 5
 var _player_name: String = "あなた"
 var _bg: ColorRect
 var _count_label: Label
@@ -116,7 +116,7 @@ func _build_ui() -> void:
 
 	_difficulty_label = Label.new()
 	_difficulty_label.text = AIPlayer.get_difficulty_name(_ai_difficulty)
-	_difficulty_label.custom_minimum_size = Vector2(200, 0)
+	_difficulty_label.custom_minimum_size = Vector2(100, 0)
 	_difficulty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_difficulty_label.add_theme_font_size_override("font_size", 26)
 	_difficulty_label.add_theme_color_override("font_color", Color.WHITE)
@@ -225,12 +225,12 @@ func _on_count_plus() -> void:
 
 
 func _on_diff_minus() -> void:
-	_ai_difficulty = maxi(_ai_difficulty - 1, 0)
+	_ai_difficulty = maxi(_ai_difficulty - 1, 1)
 	_difficulty_label.text = AIPlayer.get_difficulty_name(_ai_difficulty)
 
 
 func _on_diff_plus() -> void:
-	_ai_difficulty = mini(_ai_difficulty + 1, 2)
+	_ai_difficulty = mini(_ai_difficulty + 1, 10)
 	_difficulty_label.text = AIPlayer.get_difficulty_name(_ai_difficulty)
 
 
@@ -255,7 +255,7 @@ func _load_settings() -> void:
 		_player_count = config.get_value("game", "player_count", 4) as int
 		_ai_difficulty = config.get_value("game", "ai_difficulty", 1) as int
 		_player_count = clampi(_player_count, GameConfig.MIN_PLAYERS, GameConfig.MAX_PLAYERS)
-		_ai_difficulty = clampi(_ai_difficulty, 0, 2)
+		_ai_difficulty = clampi(_ai_difficulty, 1, 10)
 
 
 func _save_settings() -> void:
@@ -271,10 +271,6 @@ func _on_start_pressed() -> void:
 		_player_name = "あなた"
 	else:
 		_player_name = _name_edit.text.strip_edges()
-
-	# スマホ/Webではフルスクリーンに切り替え
-	if OS.has_feature("web") or OS.has_feature("mobile"):
-		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 
 	_save_settings()
 

@@ -161,11 +161,11 @@ func _show_menu() -> void:
 
 	var code_input: LineEdit = LineEdit.new()
 	code_input.placeholder_text = "コード入力"
-	code_input.max_length = 4
-	code_input.custom_minimum_size = Vector2(140, 44)
+	code_input.max_length = 6
+	code_input.custom_minimum_size = Vector2(160, 44)
 	code_input.add_theme_font_size_override("font_size", 22)
 	code_input.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	code_input.text_changed.connect(func(t: String) -> void: _room_code = t.to_upper())
+	code_input.text_changed.connect(func(t: String) -> void: _room_code = t.strip_edges())
 	join_row.add_child(code_input)
 
 	var join_btn: Button = _create_action_button("参加する", Color(0.2, 0.4, 0.6))
@@ -229,9 +229,6 @@ func _show_waiting_room(players: Array) -> void:
 
 		_start_btn = _create_action_button("ゲーム開始", Color(0.28, 0.55, 0.35))
 		_start_btn.pressed.connect(func() -> void:
-			# スマホ/Webではフルスクリーンに切り替え
-			if OS.has_feature("web") or OS.has_feature("mobile"):
-				DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 			if _network:
 				_network.start_game()
 		)
@@ -380,8 +377,8 @@ func _on_create_room() -> void:
 
 
 func _on_join_room() -> void:
-	if _room_code.length() != 4:
-		_status_label.text = "4文字のルームコードを入力してください"
+	if _room_code.length() != 6:
+		_status_label.text = "6桁のルームコードを入力してください"
 		return
 	_status_label.text = "サーバーに接続中..."
 	_pending_action = "join"

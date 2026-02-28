@@ -184,13 +184,17 @@ func _on_network_message(msg_type: String, data: Dictionary) -> void:
 			_on_online_cards_carried(data)
 		NetworkProtocol.GAME_OVER:
 			_on_online_game_over(data)
+		NetworkProtocol.PLAYER_DISCONNECTED:
+			_on_online_player_disconnected(data)
 
 
 func _on_network_disconnected() -> void:
+	_stop_bid_timer()
 	_message_label.text = "サーバーから切断されました"
 	_message_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
 	_enable_hand(false)
 	_bid_button.disabled = true
+	_show_return_to_title_button()
 
 
 func _on_online_round_start(data: Dictionary) -> void:
@@ -636,19 +640,24 @@ func _build_ui() -> void:
 	_stock_card_container.custom_minimum_size = Vector2(0, 140)
 	_center_area.add_child(_stock_card_container)
 
+	# 銘柄カード + 持ち越しカードを横並びに配置
+	var stock_row: HBoxContainer = HBoxContainer.new()
+	stock_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	stock_row.add_theme_constant_override("separation", 12)
+	_stock_card_container.add_child(stock_row)
+
 	_stock_card_display = CardDisplay.new()
 	_stock_card_display.custom_minimum_size = Vector2(100, 140)
 	_stock_card_display.size = Vector2(100, 140)
 	_stock_card_display.visible = false
-	_stock_card_container.add_child(_stock_card_display)
+	stock_row.add_child(_stock_card_display)
 
-	# 持ち越しカード表示
-	var carried_center: CenterContainer = CenterContainer.new()
-	_center_area.add_child(carried_center)
-
+	# 持ち越しカード表示（銘柄カードの右横）
 	_carried_over_container = HBoxContainer.new()
+	_carried_over_container.alignment = BoxContainer.ALIGNMENT_CENTER
 	_carried_over_container.add_theme_constant_override("separation", 6)
-	carried_center.add_child(_carried_over_container)
+	_carried_over_container.size_flags_vertical = Control.SIZE_SHRINK_END
+	stock_row.add_child(_carried_over_container)
 
 	# main_vbox下端にフッター分の余白を確保
 	var footer_spacer: Control = Control.new()
@@ -885,7 +894,7 @@ func _on_phase_changed(new_phase: GameState.Phase) -> void:
 			_message_label.text = ""
 			_guide_label.visible = false
 		GameState.Phase.GAME_OVER:
-			_message_label.text = "ゲーム終了！"
+			# ラベル更新は_on_game_overでアニメーション完了後に行う
 			_guide_label.visible = false
 
 
@@ -1165,6 +1174,9 @@ func _on_game_over(rankings: Array[PlayerState]) -> void:
 		if not is_instance_valid(self):
 			return
 
+	_message_label.text = "ゲーム終了！"
+	_message_label.add_theme_color_override("font_color", Color(0.95, 0.85, 0.4))
+
 	await get_tree().create_timer(1.5).timeout
 	if is_instance_valid(self):
 		var ranking_data: Array[Dictionary] = []
@@ -1315,3 +1327,60 @@ func _on_exit_pressed() -> void:
 		GameEvents.back_to_title_requested.emit()
 	)
 	btn_row.add_child(confirm_btn)
+
+
+func _on_online_player_disconnected(data: Dictionary) -> void:
+	var pid: int = data.get("player_id", -1) as int
+	var pname: String = data.get("player_name", "???") as String
+
+	# 対戦相手パネルに切断表示
+	if _opponent_panels.has(pid):
+		var panel: PlayerPanel = _opponent_panels[pid] as PlayerPanel
+		panel.mark_disconnected()
+
+	# 一時メッセージ表示（現在のメッセージを保存して復元）
+	var prev_text: String = _message_label.text
+	var prev_color: Color = _message_label.get_theme_color("font_color")
+	_message_label.text = pname + " が切断しました (AI操作に切替)"
+	_message_label.add_theme_color_override("font_color", Color(0.9, 0.5, 0.3))
+
+	await get_tree().create_timer(2.5).timeout
+	if not is_instance_valid(self):
+		return
+	# メッセージが上書きされていなければ復元
+	if _message_label.text == pname + " が切断しました (AI操作に切替)":
+		_message_label.text = prev_text
+		_message_label.add_theme_color_override("font_color", prev_color)
+
+
+func _show_return_to_title_button() -> void:
+	var btn_center: CenterContainer = CenterContainer.new()
+	_center_area.add_child(btn_center)
+
+	var return_btn: Button = Button.new()
+	return_btn.text = "タイトルに戻る"
+	return_btn.custom_minimum_size = Vector2(240, 50)
+	return_btn.add_theme_font_size_override("font_size", 22)
+
+	var style: StyleBoxFlat = StyleBoxFlat.new()
+	style.bg_color = Color(0.5, 0.35, 0.2)
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	style.content_margin_left = 16.0
+	style.content_margin_right = 16.0
+	style.content_margin_top = 10.0
+	style.content_margin_bottom = 10.0
+	return_btn.add_theme_stylebox_override("normal", style)
+
+	var hover: StyleBoxFlat = style.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.6, 0.42, 0.25)
+	return_btn.add_theme_stylebox_override("hover", hover)
+
+	return_btn.add_theme_color_override("font_color", Color.WHITE)
+	return_btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	return_btn.pressed.connect(func() -> void:
+		GameEvents.back_to_title_requested.emit()
+	)
+	btn_center.add_child(return_btn)

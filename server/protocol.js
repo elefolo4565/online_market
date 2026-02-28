@@ -28,6 +28,7 @@ const ServerMsg = {
   ERROR: 'error',
   MATCH_FOUND: 'match_found',
   ROOM_UPDATE: 'room_update',
+  PLAYER_DISCONNECTED: 'player_disconnected',
 };
 
 // ゲーム定数

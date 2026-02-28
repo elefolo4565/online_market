@@ -5,6 +5,9 @@ var _bg: ColorRect = null
 
 
 func _ready() -> void:
+	# スマホ/Webではフルスクリーンに切り替え
+	if OS.has_feature("web") or OS.has_feature("mobile"):
+		DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	_build_ui()
 	GameEvents.bg_color_changed.connect(_on_bg_color_changed)
 
@@ -115,6 +118,11 @@ func _build_ui() -> void:
 	settings_btn.pressed.connect(_on_settings_pressed)
 	btn_container.add_child(settings_btn)
 
+	# クレジットボタン
+	var credits_btn: Button = _create_button("クレジット", Color(0.4, 0.38, 0.5))
+	credits_btn.pressed.connect(_on_credits_pressed)
+	btn_container.add_child(credits_btn)
+
 
 func _create_button(text: String, color: Color) -> Button:
 	var btn: Button = Button.new()
@@ -163,6 +171,10 @@ func _on_rules_pressed() -> void:
 
 func _on_settings_pressed() -> void:
 	_show_settings_popup()
+
+
+func _on_credits_pressed() -> void:
+	_show_credits_popup()
 
 
 func _show_rules_popup() -> void:
@@ -521,3 +533,77 @@ func _show_settings_popup() -> void:
 		_show_settings_popup()
 	)
 	reset_row.add_child(reset_btn)
+
+
+func _show_credits_popup() -> void:
+	var body_font: Font = load("res://assets/fonts/KosugiMaru-Regular.ttf") as Font
+	var heading_font: Font = load("res://assets/fonts/DelaGothicOne-Regular.ttf") as Font
+
+	# 半透明オーバーレイ
+	var overlay: ColorRect = ColorRect.new()
+	overlay.color = Color(0, 0, 0, 0.5)
+	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(overlay)
+
+	# パネル（中央配置）
+	var center: CenterContainer = CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	overlay.add_child(center)
+
+	var panel: PanelContainer = PanelContainer.new()
+	panel.custom_minimum_size = Vector2(500, 0)
+	var panel_style: StyleBoxFlat = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.95, 0.93, 0.88)
+	panel_style.corner_radius_top_left = 12
+	panel_style.corner_radius_top_right = 12
+	panel_style.corner_radius_bottom_left = 12
+	panel_style.corner_radius_bottom_right = 12
+	panel_style.content_margin_left = 32.0
+	panel_style.content_margin_right = 32.0
+	panel_style.content_margin_top = 28.0
+	panel_style.content_margin_bottom = 28.0
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+
+	var vbox: VBoxContainer = VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 16)
+	panel.add_child(vbox)
+
+	# タイトル
+	var title: Label = Label.new()
+	title.text = "クレジット"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 30)
+	title.add_theme_color_override("font_color", Color(0.2, 0.18, 0.15))
+	title.add_theme_font_override("font", heading_font)
+	vbox.add_child(title)
+
+	# セパレータ
+	var sep: HSeparator = HSeparator.new()
+	vbox.add_child(sep)
+
+	# クレジット本文
+	var body: RichTextLabel = RichTextLabel.new()
+	body.bbcode_enabled = true
+	body.fit_content = true
+	body.scroll_active = false
+	body.add_theme_font_size_override("normal_font_size", 18)
+	body.add_theme_font_size_override("bold_font_size", 18)
+	body.add_theme_color_override("default_color", Color(0.2, 0.18, 0.15))
+	body.add_theme_font_override("normal_font", body_font)
+	body.add_theme_font_override("bold_font", body_font)
+	body.text = """[b]■ BGM[/b]
+「盤面の闘い.mp3」
+作成者: shimtone 様
+提供: DOVA-SYNDROME"""
+	vbox.add_child(body)
+
+	# 閉じるボタン
+	var btn_center: CenterContainer = CenterContainer.new()
+	vbox.add_child(btn_center)
+
+	var close_btn: Button = _create_button("閉じる", Color(0.35, 0.4, 0.55))
+	close_btn.custom_minimum_size = Vector2(180, 48)
+	close_btn.add_theme_font_override("font", heading_font)
+	close_btn.pressed.connect(func() -> void: overlay.queue_free())
+	btn_center.add_child(close_btn)

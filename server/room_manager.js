@@ -2,8 +2,8 @@
 const { GameRoom } = require('./game_room');
 const { ServerMsg, GameConfig } = require('./protocol');
 
-// 紛らわしい文字を除外したコード用文字セット
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+// ルームコード用数字文字セット
+const CODE_CHARS = '0123456789';
 
 class RoomManager {
   constructor() {
@@ -16,7 +16,7 @@ class RoomManager {
     let code;
     do {
       code = '';
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; i < 6; i++) {
         code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
       }
     } while (this.rooms.has(code));
@@ -264,14 +264,24 @@ class RoomManager {
     const player = this._getPlayer(ws, room);
     if (!player) return;
 
+    const wasInGame = room.phase !== 'waiting';
     room.removePlayer(player.id);
     this.playerRooms.delete(ws);
 
-    // 他プレイヤーに通知
-    room._broadcast(ServerMsg.PLAYER_LEFT, {
-      player_id: player.id,
-      players: room.getPlayerList(),
-    });
+    if (wasInGame) {
+      // ゲーム中の切断: AI置換を通知
+      room._broadcast(ServerMsg.PLAYER_DISCONNECTED, {
+        player_id: player.id,
+        player_name: player.name,
+        players: room.getPlayerList(),
+      });
+    } else {
+      // ロビーでの退出
+      room._broadcast(ServerMsg.PLAYER_LEFT, {
+        player_id: player.id,
+        players: room.getPlayerList(),
+      });
+    }
 
     // ルームが空なら削除
     const humanCount = [...room.players.values()].filter(p => !p.is_ai).length;

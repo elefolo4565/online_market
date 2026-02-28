@@ -24,23 +24,19 @@ func setup_game(player_configs: Array[Dictionary]) -> void:
 			i,
 			config.get("name", "Player " + str(i + 1)) as String,
 			config.get("is_ai", false) as bool,
-			config.get("ai_difficulty", 0) as int
+			config.get("ai_difficulty", 5) as int
 		)
 		player_states.append(ps)
 		if ps.is_ai:
 			var ai: AIPlayer = AIPlayer.new()
 			ai.difficulty = ps.ai_difficulty
 			_ai_players[i] = ai
-	# AIの性格をデバッグ出力
+	# AIのパラメータをデバッグ出力
 	for pid: Variant in _ai_players:
 		var pid_int: int = pid as int
 		var ai: AIPlayer = _ai_players[pid_int] as AIPlayer
 		var ps: PlayerState = player_states[pid_int]
-		var personality_info: String = ai.get_personality_info()
-		if personality_info.is_empty():
-			print("[AI] %s (id=%d) : %s" % [ps.player_name, pid_int, AIPlayer.get_difficulty_name(ai.difficulty)])
-		else:
-			print("[AI] %s (id=%d) : %s | %s" % [ps.player_name, pid_int, AIPlayer.get_difficulty_name(ai.difficulty), personality_info])
+		print("[AI] %s (id=%d) : %s | %s" % [ps.player_name, pid_int, AIPlayer.get_difficulty_name(ai.difficulty), ai.get_personality_info()])
 	state.init_game(player_states)
 	_change_phase(GameState.Phase.REVEAL_STOCK)
 
